@@ -18,10 +18,8 @@ class AuthController extends Controller
             'role' => 'required|in:owner,admin,doctor,receptionist,nurse,patient'
         ]);
 
-        // البحث عن المستخدم برقم التليفون
         $user = User::where('phone', $request->phone)->first();
 
-        // الشرط الصارم حسب خطة التيم: إيرور موحد لو اليوزر مش موجود، الباسورد غلط، أو الـ Role مش مطابق
         if (!$user || !Hash::check($request->password, $user->password) || $user->role !== $request->role) {
             return response()->json([
                 'message' => 'Invalid username or password.'
@@ -34,7 +32,6 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // إنشاء Token خاص باليوزر عبر Sanctum
         $token = $user->createToken('clinic_auth_token')->plainTextToken;
 
         return response()->json([

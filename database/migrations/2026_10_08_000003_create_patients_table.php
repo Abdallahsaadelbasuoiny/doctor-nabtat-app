@@ -15,13 +15,12 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->enum('gender', ['male', 'female']);
             $table->text('address')->nullable();
-            
-            // التشفير والبحث الأعمى للبيانات الشخصية الحساسة
+
             $table->text('phone_encrypted');
             $table->string('phone_bindex')->index();
             $table->text('national_id_encrypted')->nullable();
             $table->string('national_id_bindex')->nullable()->index();
-            
+
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

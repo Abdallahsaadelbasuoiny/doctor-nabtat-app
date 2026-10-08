@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('clinics', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('subdomain')->unique(); // لعزل الـ Tenants
+            $table->string('subdomain')->unique(); 
             $table->string('phone');
             $table->text('address');
             $table->enum('status', ['active', 'suspended', 'expired'])->default('active');
