@@ -5,7 +5,6 @@ use App\Models\Clinic;
 use App\Models\Consultation;
 use App\Models\Patient;
 use App\Models\Prescription;
-use App\Models\PrescriptionItem;
 use App\Models\User;
 
 it('rejects consultation authoring by users who are not doctors', function () {
@@ -60,7 +59,7 @@ it('stores a consultation for the authenticated doctor and linked appointment', 
     ]);
 });
 
-it('stores a prescription and all nested medication items together', function () {
+it('stores the doctor-written prescription as one text field', function () {
     $clinic = Clinic::factory()->create();
     $patient = Patient::factory()->for($clinic)->create();
     $doctor = User::factory()->for($clinic)->doctor()->create();
@@ -78,60 +77,15 @@ it('stores a prescription and all nested medication items together', function ()
 
     $this->actingAs($doctor)
         ->postJson("/api/consultations/{$consultation->id}/prescriptions", [
-            'notes' => 'Take after meals',
-            'medications' => [
-                ['name' => 'Medicine A', 'dosage' => '500 mg', 'frequency' => 'Twice daily', 'duration' => '5 days'],
-                ['name' => 'Medicine B', 'dosage' => '10 mg', 'frequency' => 'Once daily', 'duration' => '7 days'],
-            ],
+            'prescription' => "Medicine A 500 mg, twice daily for 5 days.\nMedicine B 10 mg once daily for 7 days.",
         ])
         ->assertCreated()
-        ->assertJsonPath('data.medications.0.name', 'Medicine A')
-        ->assertJsonPath('data.medications.1.name', 'Medicine B');
+        ->assertJsonPath('data.prescription', "Medicine A 500 mg, twice daily for 5 days.\nMedicine B 10 mg once daily for 7 days.");
 
     $this->assertDatabaseCount('prescriptions', 1);
-    $this->assertDatabaseCount('prescription_items', 2);
 });
 
-it('rolls back a prescription when a nested medication insert fails', function () {
-    $clinic = Clinic::factory()->create();
-    $patient = Patient::factory()->for($clinic)->create();
-    $doctor = User::factory()->for($clinic)->doctor()->create();
-    $appointment = Appointment::factory()->create([
-        'clinic_id' => $clinic->id,
-        'patient_id' => $patient->id,
-        'doctor_id' => $doctor->id,
-    ]);
-    $consultation = Consultation::factory()->create([
-        'clinic_id' => $clinic->id,
-        'appointment_id' => $appointment->id,
-        'patient_id' => $patient->id,
-        'doctor_id' => $doctor->id,
-    ]);
-
-    PrescriptionItem::creating(function (PrescriptionItem $item): void {
-        if ($item->name === 'Force transaction rollback') {
-            throw new RuntimeException('Simulated medication insert failure.');
-        }
-    });
-
-    try {
-        $this->actingAs($doctor)->postJson("/api/consultations/{$consultation->id}/prescriptions", [
-            'medications' => [
-                ['name' => 'Medicine A', 'dosage' => '500 mg', 'frequency' => 'Twice daily', 'duration' => '5 days'],
-                ['name' => 'Force transaction rollback', 'dosage' => '10 mg', 'frequency' => 'Once daily', 'duration' => '7 days'],
-            ],
-        ]);
-    } catch (RuntimeException) {
-        // The injected failure is expected; database state below verifies rollback.
-    } finally {
-        PrescriptionItem::flushEventListeners();
-    }
-
-    $this->assertDatabaseCount('prescriptions', 0);
-    $this->assertDatabaseCount('prescription_items', 0);
-});
-
-it('returns a print-ready prescription payload with ordered medication details', function () {
+it('returns a print-ready prescription payload with the free-text prescription', function () {
     $clinic = Clinic::factory()->create();
     $patient = Patient::factory()->for($clinic)->create();
     $doctor = User::factory()->for($clinic)->doctor()->create();
@@ -150,13 +104,7 @@ it('returns a print-ready prescription payload with ordered medication details',
     $prescription = Prescription::factory()->create([
         'consultation_id' => $consultation->id,
         'doctor_id' => $doctor->id,
-    ]);
-    $prescription->items()->create([
-        'name' => 'Medicine A',
-        'dosage' => '500 mg',
-        'frequency' => 'Twice daily',
-        'duration' => '5 days',
-        'sort_order' => 0,
+        'prescription' => 'Take the medicine as directed.',
     ]);
 
     $this->actingAs($doctor)
@@ -166,7 +114,7 @@ it('returns a print-ready prescription payload with ordered medication details',
         ->assertJsonPath('data.patient.name', $patient->name)
         ->assertJsonPath('data.doctor.name', $doctor->name)
         ->assertJsonPath('data.consultation.diagnosis', 'Seasonal allergy')
-        ->assertJsonPath('data.medications.0.name', 'Medicine A');
+        ->assertJsonPath('data.prescription', 'Take the medicine as directed.');
 });
 
 it('requires an authenticated user for clinical and prescription endpoints', function () {
@@ -192,12 +140,9 @@ it('rejects prescriptions written by users who are not doctors', function () {
 
     $this->actingAs($receptionist)
         ->postJson("/api/consultations/{$consultation->id}/prescriptions", [
-            'medications' => [
-                ['name' => 'Medicine A', 'dosage' => '500 mg', 'frequency' => 'Twice daily', 'duration' => '5 days'],
-            ],
+            'prescription' => 'Take the medicine as directed.',
         ])
         ->assertForbidden();
 
     $this->assertDatabaseCount('prescriptions', 0);
-    $this->assertDatabaseCount('prescription_items', 0);
 });

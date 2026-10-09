@@ -18,6 +18,7 @@ class PrescriptionFactory extends Factory
             'consultation_id' => Consultation::factory(),
             'doctor_id' => User::factory()->doctor(),
             'issued_at' => now(),
+            'prescription' => fake()->paragraph(),
         ];
     }
 }

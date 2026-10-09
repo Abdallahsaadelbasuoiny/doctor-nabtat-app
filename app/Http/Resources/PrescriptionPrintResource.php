@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\PrescriptionItem;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -38,14 +37,7 @@ class PrescriptionPrintResource extends JsonResource
                 'symptoms' => $this->consultation->symptoms,
                 'notes' => $this->consultation->notes,
             ],
-            'notes' => $this->notes,
-            'medications' => $this->items->map(fn (PrescriptionItem $item): array => [
-                'name' => $item->name,
-                'dosage' => $item->dosage,
-                'frequency' => $item->frequency,
-                'duration' => $item->duration,
-                'instructions' => $item->instructions,
-            ])->values(),
+            'prescription' => $this->prescription,
         ];
     }
 }

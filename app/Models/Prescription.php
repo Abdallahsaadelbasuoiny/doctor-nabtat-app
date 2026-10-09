@@ -6,7 +6,6 @@ use Database\Factories\PrescriptionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Prescription extends Model
 {
@@ -17,7 +16,7 @@ class Prescription extends Model
         'consultation_id',
         'doctor_id',
         'issued_at',
-        'notes',
+        'prescription',
     ];
 
     protected function casts(): array
@@ -37,8 +36,4 @@ class Prescription extends Model
         return $this->belongsTo(User::class, 'doctor_id');
     }
 
-    public function items(): HasMany
-    {
-        return $this->hasMany(PrescriptionItem::class)->orderBy('sort_order')->orderBy('id');
-    }
 }

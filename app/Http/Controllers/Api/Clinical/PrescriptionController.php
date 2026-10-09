@@ -25,19 +25,8 @@ class PrescriptionController extends Controller
             $prescription = $consultationRecord->prescriptions()->create([
                 'doctor_id' => $user->id,
                 'issued_at' => now(),
-                'notes' => $data['notes'] ?? null,
+                'prescription' => $data['prescription'],
             ]);
-
-            foreach ($data['medications'] as $sortOrder => $medication) {
-                $prescription->items()->create([
-                    'name' => $medication['name'],
-                    'dosage' => $medication['dosage'],
-                    'frequency' => $medication['frequency'],
-                    'duration' => $medication['duration'],
-                    'instructions' => $medication['instructions'] ?? null,
-                    'sort_order' => $sortOrder,
-                ]);
-            }
 
             return $prescription;
         });
@@ -48,8 +37,7 @@ class PrescriptionController extends Controller
                 'consultation_id' => $prescription->consultation_id,
                 'doctor_id' => $prescription->doctor_id,
                 'issued_at' => $prescription->issued_at,
-                'notes' => $prescription->notes,
-                'medications' => $prescription->items,
+                'prescription' => $prescription->prescription,
             ],
         ], JsonResponse::HTTP_CREATED);
     }

@@ -48,11 +48,7 @@ class ClinicalInvoicingSeeder extends Seeder
 
         $prescription = Prescription::query()->firstOrCreate(
             ['consultation_id' => $consultation->id],
-            ['doctor_id' => $doctor->id],
-        );
-        $prescription->items()->firstOrCreate(
-            ['name' => 'Demo medication'],
-            ['dosage' => '500 mg', 'frequency' => 'Twice daily', 'duration' => '5 days'],
+            ['doctor_id' => $doctor->id, 'prescription' => 'Demo medication, 500 mg twice daily for 5 days.'],
         );
 
         Invoice::query()->firstOrCreate(
